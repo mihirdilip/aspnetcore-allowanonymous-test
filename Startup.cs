@@ -68,10 +68,7 @@ namespace Api
             if (Context.GetEndpoint()?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
                 
-                var message = "======================================================" + Environment.NewLine +
-                    "IAllowAnonymous confirmed!" + Environment.NewLine +
-                    "======================================================";
-
+                var message = $"==========================================   IAllowAnonymous confirmed on {Context.GetEndpoint().DisplayName}! ======================================================";
                 Logger.LogInformation(message);
             }
 
