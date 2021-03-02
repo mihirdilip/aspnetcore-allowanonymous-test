@@ -17,12 +17,12 @@ namespace Api
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication("ApiKey")
+            services.AddAuthentication()
                 .AddScheme<ApiKeyOptions, ApiKeyAuthenticationHandler>("ApiKey", _ => { });
 
             services.AddAuthorization(options =>
             {
-                options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+                options.FallbackPolicy = new AuthorizationPolicyBuilder("ApiKey").RequireAuthenticatedUser().Build();
             });
 
             services.AddControllers();
@@ -50,6 +50,8 @@ namespace Api
                     {
                         await context.Response.WriteAsync("Anonymous Hello World!");
                     }).WithMetadata(new AllowAnonymousAttribute());
+
+                    endpoints.MapControllers();
                 });
         }
     }
@@ -63,6 +65,16 @@ namespace Api
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (Context.GetEndpoint()?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
+            {
+                
+                var message = "======================================================" + Environment.NewLine +
+                    "IAllowAnonymous confirmed!" + Environment.NewLine +
+                    "======================================================";
+
+                Logger.LogInformation(message);
+            }
+
             throw new NotImplementedException();
 
             //try
