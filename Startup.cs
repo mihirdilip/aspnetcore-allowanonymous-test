@@ -7,7 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
+using System.Collections.Generic;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
@@ -43,12 +44,12 @@ namespace Api
                 {
                     endpoints.MapGet("/auth", async context =>
                     {
-                        await context.Response.WriteAsync("Authenticated Hello World!");
+                        await context.Response.WriteAsync($"Authenticated as {context.User.Identity.Name} (is-authenticated: {context.User.Identity.IsAuthenticated})!");
                     });
 
                     endpoints.MapGet("/anonymous", async context =>
                     {
-                        await context.Response.WriteAsync("Anonymous Hello World!");
+                        await context.Response.WriteAsync($"Anonymous as {context.User.Identity.Name} (is-authenticated: {context.User.Identity.IsAuthenticated})!");
                     }).WithMetadata(new AllowAnonymousAttribute());
 
                     endpoints.MapControllers();
@@ -65,14 +66,22 @@ namespace Api
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (Context.GetEndpoint()?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
+            var endpoint = Context.GetEndpoint();
+            if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
-                
-                var message = $"==========================================   IAllowAnonymous confirmed on {Context.GetEndpoint().DisplayName}! ======================================================";
-                Logger.LogInformation(message);
+                Logger.LogInformation($"================== IAllowAnonymous confirmed on {endpoint.DisplayName}! ==================");
             }
 
-            throw new NotImplementedException();
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, "TestUser"),
+                new Claim(ClaimTypes.NameIdentifier, "TestUser")
+            };
+            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme.Name));
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return Task.FromResult(AuthenticateResult.Success(ticket));
+
+            //throw new NotImplementedException();
 
             //try
             //{
